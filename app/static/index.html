@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Brain MRI classification research prototype using a MobileNetV2 CNN and Grad-CAM." />
+  <title>NeuroVision AI | Brain MRI Classifier</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="NeuroVision AI home">
+        <span class="brand-mark" aria-hidden="true">N</span>
+        <span>
+          <strong>NeuroVision AI</strong>
+          <small>Academic MRI decision-support prototype</small>
+        </span>
+      </a>
+      <div id="serverStatus" class="status-pill checking">
+        <span class="status-dot"></span>
+        <span>Checking model</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Computer Vision · Transfer Learning · Explainable AI</p>
+          <h1>Brain tumour MRI classification with a CNN</h1>
+          <p class="hero-text">
+            Upload a brain MRI image to classify it as glioma, meningioma,
+            pituitary tumour, or no tumour. The Grad-CAM view highlights the
+            regions that influenced the model's prediction.
+          </p>
+          <div class="architecture-strip" aria-label="Model architecture summary">
+            <span>MRI 224×224×3</span><i>→</i>
+            <span>MobileNetV2</span><i>→</i>
+            <span>Global Avg Pool</span><i>→</i>
+            <span>Dropout</span><i>→</i>
+            <span>Softmax</span>
+          </div>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <img src="/static/assets/hero-brain-ai.png" alt="" />
+          <div class="scan-frame"></div>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="MRI classification workspace">
+        <article class="panel upload-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="step-label">Step 01</p>
+              <h2>Upload an MRI scan</h2>
+            </div>
+            <span class="file-limit">PNG/JPG · max 10 MB</span>
+          </div>
+
+          <label id="dropZone" class="drop-zone" for="fileInput">
+            <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,image/tiff" hidden />
+            <div class="upload-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7 9m5-5 5 5M5 15v4h14v-4"/></svg>
+            </div>
+            <strong>Drop the MRI image here</strong>
+            <span>or click to browse your device</span>
+          </label>
+
+          <div id="selectedFile" class="selected-file hidden">
+            <img id="localPreview" alt="Selected MRI preview" />
+            <div>
+              <strong id="fileName"></strong>
+              <span id="fileSize"></span>
+            </div>
+            <button id="removeFile" class="icon-button" type="button" aria-label="Remove selected file">×</button>
+          </div>
+
+          <button id="analyseButton" class="primary-button" type="button" disabled>
+            <span class="button-text">Analyse MRI</span>
+            <span class="button-loader" aria-hidden="true"></span>
+          </button>
+          <p id="errorMessage" class="error-message hidden" role="alert"></p>
+        </article>
+
+        <article class="panel results-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="step-label">Step 02</p>
+              <h2>Model interpretation</h2>
+            </div>
+            <span class="model-chip">MobileNetV2 CNN</span>
+          </div>
+
+          <div id="emptyState" class="empty-state">
+            <div class="empty-orbit" aria-hidden="true"><span></span></div>
+            <h3>Awaiting an MRI image</h3>
+            <p>The prediction, confidence scores, and Grad-CAM explanation will appear here.</p>
+          </div>
+
+          <div id="resultContent" class="result-content hidden">
+            <div class="prediction-summary">
+              <div>
+                <span class="summary-label">Predicted class</span>
+                <h3 id="predictedLabel">—</h3>
+              </div>
+              <div class="confidence-ring" id="confidenceRing">
+                <strong id="confidenceValue">0%</strong>
+                <span>confidence</span>
+              </div>
+            </div>
+
+            <div class="result-grid">
+              <figure class="image-card">
+                <figcaption>Original MRI</figcaption>
+                <img id="resultOriginal" alt="Uploaded MRI scan" />
+              </figure>
+              <figure class="image-card heatmap-card">
+                <figcaption>Grad-CAM attention map</figcaption>
+                <img id="resultHeatmap" alt="MRI with Grad-CAM heatmap overlay" />
+                <span class="heatmap-key"><i></i> Higher model attention</span>
+              </figure>
+            </div>
+
+            <div class="probability-section">
+              <div class="section-title-row">
+                <h3>Class probabilities</h3>
+                <span>Total probability = 100%</span>
+              </div>
+              <div id="probabilityBars" class="probability-bars"></div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="evidence-grid">
+        <article class="evidence-card accent-card">
+          <span class="metric-value">87.81%</span>
+          <h3>Held-out test accuracy</h3>
+          <p>Measured on 1,600 unseen MRI images, with 400 examples per class.</p>
+        </article>
+        <article class="evidence-card">
+          <span class="metric-value">4</span>
+          <h3>Balanced classes</h3>
+          <p>Glioma, meningioma, no tumour, and pituitary tumour.</p>
+        </article>
+        <article class="evidence-card">
+          <span class="metric-value">53</span>
+          <h3>Convolutional layers</h3>
+          <p>MobileNetV2 learns hierarchical edges, textures, shapes, and tumour patterns.</p>
+        </article>
+        <article class="evidence-card warning-card">
+          <span class="metric-icon" aria-hidden="true">!</span>
+          <h3>Research use only</h3>
+          <p>This prototype is not a medical device and must not be used as a diagnosis.</p>
+        </article>
+      </section>
+    </main>
+
+    <footer>
+      <span>ITS69204 · Computer Vision and Natural Language Processing</span>
+      <span>MobileNetV2 transfer-learning research prototype</span>
+    </footer>
+  </div>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

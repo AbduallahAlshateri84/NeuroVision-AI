@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: neurovision-ai
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: MODEL_PATH
+        value: /app/models/best_model.keras
+      - key: CLASS_NAMES
+        value: glioma,meningioma,notumor,pituitary
+      - key: MAX_UPLOAD_MB
+        value: 10

@@ -1,0 +1,11 @@
+.git
+.gitignore
+.venv
+venv
+__pycache__
+.pytest_cache
+.ruff_cache
+*.ipynb
+*.pptx
+*.docx
+tests

@@ -1,0 +1,12 @@
+services:
+  neurovision:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      MODEL_PATH: /app/models/best_model.keras
+      CLASS_NAMES: glioma,meningioma,notumor,pituitary
+      MAX_UPLOAD_MB: 10
+    volumes:
+      - ./models:/app/models:ro
+    restart: unless-stopped
