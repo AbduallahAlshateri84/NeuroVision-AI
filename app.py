@@ -130,6 +130,19 @@ def load_model() -> tf.keras.Model:
         compile=False,
     )
 
+    expected_shape = (None, IMAGE_SIZE[0], IMAGE_SIZE[1], 3)
+    if tuple(model.input_shape) != expected_shape:
+        raise ValueError(
+            f"Unexpected model input shape: {model.input_shape}. "
+            f"Expected {expected_shape}."
+        )
+
+    if int(model.output_shape[-1]) != len(CLASS_NAMES):
+        raise ValueError(
+            f"Model has {model.output_shape[-1]} outputs, but "
+            f"{len(CLASS_NAMES)} class names were configured."
+        )
+
     return model
 
 
@@ -141,12 +154,15 @@ def prepare_image(
     image: Image.Image,
 ) -> tuple[np.ndarray, Image.Image]:
     """
-    Convert the image to RGB, resize it to 224x224 and apply
-    MobileNetV2 preprocessing.
+    Convert the image to RGB and resize it to 224x224.
+
+    The exported full model already performs MobileNetV2
+    preprocessing internally, so the prediction batch must remain
+    in the original 0-255 pixel range.
 
     Returns:
-        processed_batch:
-            NumPy array with shape (1, 224, 224, 3)
+        raw_batch:
+            NumPy array with shape (1, 224, 224, 3), values 0-255
 
         resized_image:
             PIL image resized to 224x224
@@ -164,16 +180,12 @@ def prepare_image(
         dtype=np.float32,
     )
 
-    batch = np.expand_dims(
+    raw_batch = np.expand_dims(
         image_array,
         axis=0,
     )
 
-    processed_batch = preprocess_input(
-        batch
-    )
-
-    return processed_batch, resized_image
+    return raw_batch, resized_image
 
 
 # =========================================================
@@ -334,8 +346,15 @@ def generate_gradcam_heatmap(
         ],
     )
 
+    # The Grad-CAM helper calls the MobileNetV2 backbone directly,
+    # bypassing the full model's internal preprocessing layer.
+    # Therefore preprocessing is applied exactly once here.
+    backbone_batch = preprocess_input(
+        np.array(processed_batch, dtype=np.float32, copy=True)
+    )
+
     input_tensor = tf.convert_to_tensor(
-        processed_batch,
+        backbone_batch,
         dtype=tf.float32,
     )
 
@@ -562,7 +581,7 @@ if uploaded_file is not None:
             uploaded_file
         ).convert("RGB")
 
-        processed_batch, resized_image = prepare_image(
+        raw_batch, resized_image = prepare_image(
             uploaded_image
         )
 
@@ -576,12 +595,12 @@ if uploaded_file is not None:
                 confidence,
             ) = predict_image(
                 model,
-                processed_batch,
+                raw_batch,
             )
 
             heatmap = generate_gradcam_heatmap(
                 model=model,
-                processed_batch=processed_batch,
+                processed_batch=raw_batch,
                 predicted_index=predicted_index,
             )
 
